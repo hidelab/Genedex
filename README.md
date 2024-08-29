@@ -1,14 +1,16 @@
-# Genedex 1.0.0
+# Genedex v1.0.0
 
 ## Overview
 
-Genedex is a Shiny application designed for genetic data exploration and visualization in the context of Alzheimer's Disease. It provides tools for managing gene lists, searching genes, calculating similarity matrices, analyzing facet interactions, performing pathway enrichment analysis, and conducting functional overlap analysis.
+GeneDex is a Shiny application designed for genetic data exploration and visualization in the context of Alzheimer's Disease. It provides tools for managing gene lists, searching genes, calculating similarity matrices, analyzing facet interactions, performing pathway enrichment analysis, and conducting functional overlap analysis.
 
 ## Features
 
 ### Input Gene Lists:
 
 - Add and visualize multiple gene lists for analysis.
+  #### How to use Input Gene Lists
+  
 
 ### Search:
 
@@ -35,14 +37,29 @@ Run the application:
 ```{r}
 shiny::runApp()
 ```
-## How to upload a gene list
+### How to use Genedex ###
+- External use: Access the version on Shiny.io at 
+- Internal use: Use the code in the GitHub folder.
+ - Download the code
+ - Change the working directory in line 535 to the OneDrive folder [Genedex](https://bilh-my.sharepoint.com/:f:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex?csf=1&web=1&e=F0inEa)
+```{r}
+  #CHANGE IF YOUR FOLDER PATH IS DIFFERENT
+  setwd("/Users/gpegoraro/Documents/Genedex/")
+```
+ - Update the path to the folders as follows:
+```{r}
+local_folder <- "Data/Genes_lists"
+metadata_path <- "Data/Metadata/Gene_list_collection.xlsx"
+```
+## Curation
+### How to upload a gene list
 To upload a new gene list:
 1) Go to OneDrive and navigate to the Genedex folder.
 2) Open the [Gene_list_collection.xlsx](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Gene_list_collection.xlsx?d=wbae2449a15dc45cd97aa063210d18107&csf=1&web=1&e=FKkGf6.) file.
 3) Add metadata about the gene list in the Gene_list_collection.xlsx file.
 4) Add the gene list to the [Genedex/Data/Genes_lists/](https://bilh-my.sharepoint.com/:f:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Genes_lists?csf=1&web=1&e=O5YWqj) folder.    
 
-### Adding metadata in Gene_list_collection.xlsx
+#### Adding metadata in Gene_list_collection.xlsx
 If you want to add a new gene list, fill in the following columns in the file. Refer to the "Key" sheet for a description of each column:
 - **Gene_list_name**: Name of the gene list, composed of an alphanumeric ID starting with "GL" followed by a number, and a facet. Ensure the number is consecutive to the previous list. Specify facets in the "Facets" column. Example: ***GL0000001_AD_Immune_response***
 - **Author**: Format as "FirstInitial LastName."
@@ -62,35 +79,31 @@ The curation of a gene list entails:
   2) Annotation of the gene list with one or more facets 
   3) Fill all the columns in the collective file 
 
-### How to upload a gene list
+#### How to upload a gene list
 To upload a gene list:
 - Ensure the file is a .txt format, with each row containing a gene symbol.
 - Include a header, GENE_SYMBOL, followed by gene names in HUGO nomenclature.
 - Name the file according to the Gene_list_name used for its metadata.
 Once these requirements are met, upload the gene lists in [Genes_lists](https://bilh-my.sharepoint.com/:f:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Genes_lists?csf=1&web=1&e=O5YWqj)
 
-### Resources for gene lists collection ###
+#### Resources for gene lists collection 
 Tools used to search for gene lists:
 - Rummagene: Enter keywords (e.g., "AD Neuroinflammation") to retrieve related publications and gene lists.
 - PubMed: Input key terms to find associated publications.
 - Gemma: Select the organism (Human) and disease (Alzheimer's Disease) to retrieve GEO studies with associated quality.
   
-### How to curate a gene list ###
+#### How to curate a gene list
 - Identify genes with consistent expression changes under specific conditions (facets) such as AD or neurodegeneration, using studies like RNA-sequencing or scRNA-sequencing. For gene lists from studies like WGCNA that analyze modules of co-expressed genes, ensure the facet corresponds to the module.
 - Samples must be human.
 - For gene lists from differential expression studies, select genes with an adjusted p-value < 0.1.
 - Ensure the genome reference is GRCh38. If the version is GRCh37, convert gene symbols to GRCh38.
 
-### How to use Genedex ###
-- External use: Access the version on Shiny.io.
-- Internal use: Use the code in the GitHub folder. Ensure to update paths to the Genes_lists folder and the [Gene_list_collection.xlsx](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Gene_list_collection.xlsx?d=wbae2449a15dc45cd97aa063210d18107&csf=1&web=1&e=FKkGf6.) file.
-
-### When to deploy on Shiny.io ###
+#### When to deploy on Shiny.io 
 Please deploy on Shiny.io if:
 - The App.R code is modified.
 - Changes are made to [Gene_list_collection.xlsx](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Gene_list_collection.xlsx?d=wbae2449a15dc45cd97aa063210d18107&csf=1&web=1&e=FKkGf6.)
 
-### How to deploy ###
+#### How to deploy 
 1) Copy the amended files in one folder
 2) Ensure the folder contains:
    - app.R : code for the shiny app
@@ -109,9 +122,22 @@ secret='your_secret'
 
 rsconnect::deployApp()
 ```
+## Versioning
+1) MAJOR Version (1st number): Represents significant changes to the code, including:
+ - Introduction of new functionalities
+ - Significant updates that may not be backward compatible <br />
+2) MINOR Version (2nd number): Indicates the addition of new features or enhancements to existing functionalities, such as:
+ - Adding new features
+ - Enhancing existing functionalities <br />
+3) PATCH Version (3rd number): Represents bug fixes or minor improvements, including:
+ - Fixing bugs in the code
+ - Adding, removing, or modifying gene lists. Add your changes to the file [Log_gene_lists](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Log_gene_lists.xlsx?d=w97ac1bd7696249c8b30004b64f57b1b9&csf=1&web=1&e=TnA0S8) <br />
 
+### Release notes
 
-
+| Release | Description | Date |
+| --- | --- | --- |
+| Genedex v1.0.0 | The app contains 3 functionalities: Input Gene Lists, Search, Similarity Matrix and Facets Interactions | 08/29/2024 |
 
 
 
