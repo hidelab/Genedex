@@ -151,6 +151,8 @@ shiny::runApp()
 local_folder <- "Data/Genes_lists"
 metadata_path <- "Data/Metadata/Gene_list_collection.xlsx"
 ```
+If you experience any issues while using the app, open an issue in the Github page.
+
 ## Curation
 ### How to upload a gene list
 To upload a new gene list:
