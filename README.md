@@ -1,7 +1,7 @@
 # Genedex 
 ## Overview
 
-GeneDex is a Shiny application designed for genetic data exploration and visualization in the context of Alzheimer's Disease. It provides tools for managing gene lists, searching genes, calculating similarity matrices, analyzing facet interactions, performing pathway enrichment analysis, and conducting functional overlap analysis.
+Genedex is a Shiny application designed for genetic data exploration and visualization in the context of Alzheimer's Disease. It provides tools for managing gene lists, searching genes, calculating similarity matrices, analyzing facet interactions, performing pathway enrichment analysis, and conducting functional overlap analysis.
 
 ## Features
 
