@@ -164,13 +164,6 @@ ui <- dashboardPage(
                   actionButton("search_facet", "Search Facet", class = "btn-custom"),  # Button to search by facet
                   DTOutput("facet_results")  # Data table output for facet search results
                 )
-              ),
-              fluidRow(
-                box(
-                  title = "Gene List Contents", status = "primary", solidHeader = TRUE, width = 12,
-                  DTOutput("gene_list_contents"),  # Data table output for displaying gene list contents
-                  downloadButton("download_gene_list", "Download Gene List", class = "btn-custom")  # Button to download gene list
-                )
               )
       ),
       
@@ -249,13 +242,6 @@ ui <- dashboardPage(
                       upsetjsOutput("upsetjs_plot", width = "1800px", height = "1200px")  # Plot output for UpSet plot
                     )
                   )
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Interactions", status = "primary", solidHeader = TRUE, width = 12,
-                  DTOutput("clicked_genes_table"),  # Data table output for clicked genes
-                  downloadButton("download_clicked_genes", "Download", class = "btn-custom")  # Button to download clicked genes
                 )
               )
       ),
@@ -566,7 +552,7 @@ server <- function(input, output, session) {
   # List files in the local folder
   files <- list_local_files(local_folder)
   
-  # Extract gene list names from file names 
+  # Extract gene list names from file names (remove folder path and file extension)
   gene_list_names <- basename(files)
   gene_list_names <- sub("\\.txt$", "", gene_list_names)
   
