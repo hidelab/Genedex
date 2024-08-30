@@ -18,7 +18,7 @@ ui <- dashboardPage(
   dashboardHeader(
     title = tags$div(
       style = "font-size: 24px; font-weight: bold;",  
-      "Genedex 1.0.0"  # Title text
+      "Genedex"  # Title text
     )
   ),
   
@@ -159,7 +159,6 @@ ui <- dashboardPage(
               fluidRow(
                 box(
                   title = "Facet Search", status = "primary", solidHeader = TRUE, width = 12,
-                  p("Click on a facet search result to visualize the genes included in the gene list."),  # Instruction for users
                   selectInput("facet_select", "Select a Facet", choices = NULL),  # Dropdown to select a facet
                   actionButton("search_facet", "Search Facet", class = "btn-custom"),  # Button to search by facet
                   DTOutput("facet_results")  # Data table output for facet search results
@@ -180,7 +179,7 @@ ui <- dashboardPage(
                       column(6, actionButton("reset_plot_genes", "Reset Plot", class = "btn-danger"))  # Button to reset plot for genes
                     ),
                     selectizeInput("tag_selector_similarity", "Select Tags", choices = NULL, multiple = TRUE),  # Tag selector for similarity matrix
-                    selectizeInput("selected_gene_lists_matrix", "Select Gene Lists for Analysis", choices = NULL, multiple = TRUE),  # Dropdown to select gene lists for analysis
+                    selectizeInput("selected_gene_lists_matrix", "Select Gene Lists", choices = NULL, multiple = TRUE),  # Dropdown to select gene lists for analysis
                     selectizeInput("input_gene_lists_for_matrix", "Select Input Gene Lists", choices = NULL, multiple = TRUE)  # Dropdown to select user-added gene lists
                   ),
                   conditionalPanel(
@@ -189,7 +188,7 @@ ui <- dashboardPage(
                       column(6, actionButton("select_all_facets", "Select All Facets", class = "btn-custom")),  # Button to select all facets
                       column(6, actionButton("deselect_all_facets", "Deselect All Facets", class = "btn-danger"))  # Button to deselect all facets
                     ),
-                    selectizeInput("selected_facets", "Select Facets for Analysis", choices = NULL, multiple = TRUE),  # Dropdown to select facets for analysis
+                    selectizeInput("selected_facets", "Select Facets", choices = NULL, multiple = TRUE),  # Dropdown to select facets for analysis
                     fluidRow(
                       column(6, actionButton("calculate_similarity_matrix_facets", "Calculate", class = "btn-custom")),  # Button to calculate similarity matrix for facets
                       column(6, actionButton("reset_plot_facets", "Reset Plot", class = "btn-danger"))  # Button to reset plot for facets
@@ -528,7 +527,7 @@ server <- function(input, output, session) {
   # -----------------------------------------------------------
   
   #CHANGE IF YOUR FOLDER PATH IS DIFFERENT
-  setwd("/Users/gpegoraro/Documents/Genedex/")
+  #setwd("/Users/gpegoraro/Documents/Genedex/")
   # Load metadata from the Excel file
   local_folder <- "Genes_lists"
   metadata_path <- "Gene_list_collection.xlsx"
