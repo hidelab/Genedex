@@ -9,7 +9,8 @@ GeneDex is a Shiny application designed for genetic data exploration and visuali
 
 - Add and visualize multiple gene lists for analysis.
   <img width="1470" alt="Screenshot 2024-08-29 at 9 53 27 PM" src="https://github.com/user-attachments/assets/78790a4c-111f-442f-90fe-541632097843">
-  <img width="1470" alt="Screenshot 2024-08-21 at 12 52 16 PM" src="https://github.com/user-attachments/assets/6c6647b5-7e8f-496d-a3ac-90bd16d4ab77">
+ <img width="1470" alt="Screenshot 2024-08-30 at 1 39 47 PM" src="https://github.com/user-attachments/assets/41e6d2fd-ebf0-47e2-b1d9-08417bc2ca2a">
+
 
 #### How to use Input Gene Lists
 1) Navigate to the **"Input Gene Lists"** Tab:
@@ -30,10 +31,11 @@ GeneDex is a Shiny application designed for genetic data exploration and visuali
 
 - Gene search: Input a gene or a gene list to retrieve associated facets and related publications.
 - Facet search: Select a facet from the drop-down menu to see the gene lists associated with that facet.
+
 ### How to use Search
+<img width="1470" alt="Screenshot 2024-08-30 at 1 39 56 PM" src="https://github.com/user-attachments/assets/d674314c-f286-4e67-ba5e-606179e31f61">
 
-  ![Screenshot 2024-08-30 at 11 04 27 AM 2](https://github.com/user-attachments/assets/a8d146d3-8536-478e-bacd-baa467c01082)
-
+ 
 #### How to use Gene Search
 
 1) Enter Gene IDs:
@@ -95,6 +97,7 @@ Select whether you want to perform the interaction analysis on Gene Lists or Fac
 #### How to Use Facet Interaction for Gene Lists
 
 <img width="1470" alt="Screenshot 2024-08-29 at 9 54 33 PM" src="https://github.com/user-attachments/assets/54ba05dc-7f92-445b-bc2c-8ec39fc89091">
+
 1) Select Gene List:
    - **"Select Tags"** : Choose tags to filter gene lists containing the selected term.
    - **"Select Gene Lists"** : Choose a specific gene list by name from the dropdown menu.
@@ -135,7 +138,7 @@ Run the application:
 shiny::runApp()
 ```
 ### How to use Genedex ###
-- External use: Access the version on Shiny.io at 
+- External use: Access the version on Shiny.io at https://hidelab.shinyapps.io/genedex/
 - Internal use: Use the code in the GitHub folder.
  - Download the code
  - Change the working directory in line 535 to the OneDrive folder [Genedex](https://bilh-my.sharepoint.com/:f:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex?csf=1&web=1&e=F0inEa)
@@ -174,7 +177,9 @@ The curation of a gene list entails:
  
   1) Read the paper and identify a gene list 
   2) Annotation of the gene list with one or more facets 
-  3) Fill all the columns in the collective file 
+  3) Fill all the columns in the collective file
+
+IMPORTANT: after you have modified the file copy it to the folder [Gene_lists_collections](https://bilh-my.sharepoint.com/:f:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Gene_lists_collections?csf=1&web=1&e=OT4lJ5) adding the number of the version to the end of file name. You can find version number in [Log_gene_lists.xslx](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Log_gene_lists.xlsx?d=w97ac1bd7696249c8b30004b64f57b1b9&csf=1&web=1&e=XvrGzL), add +1 to the current version.
 
 #### How to upload a gene list
 To upload a gene list:
@@ -200,10 +205,11 @@ Please deploy on Shiny.io if:
 - The App.R code is modified.
 - Changes are made to [Gene_list_collection.xlsx](https://bilh-my.sharepoint.com/:x:/r/personal/whide_bidmc_harvard_edu/Documents/Hide_ncLab/BIDMC.lab/Projects/Active/Genedex/Data/Metadata/Gene_list_collection.xlsx?d=wbae2449a15dc45cd97aa063210d18107&csf=1&web=1&e=FKkGf6.)
 
+
 #### How to deploy 
 1) Copy the amended files in one folder
 2) Ensure the folder contains:
-   - app.R : code for the shiny app
+   - app.R : code for the shiny app (comment line 535 to the OneDrive folder)
    - Genes_lists : folder containing the gene lists
    - Gene_list_collection.xlsx : file containing the gene lists metadata
 4) Login to shinyapps.io
