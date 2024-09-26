@@ -153,7 +153,7 @@ ui <- dashboardPage(
                   uiOutput("input_gene_list_ui"),  # Dynamic UI for selecting gene lists
                   actionButton("search_genes", "Search Genes", class = "btn-custom"),  # Button to search genes
                   DTOutput("gene_results"),  # Data table output for gene search results
-                  downloadButton("download_results", "Download Results", class = "btn-custom")  # Button to download search results
+                  downloadButton("download_results", "Download", class = "btn-custom")  # Button to download search results
                 )
               ),
               fluidRow(
@@ -241,6 +241,13 @@ ui <- dashboardPage(
                       upsetjsOutput("upsetjs_plot", width = "1800px", height = "1200px")  # Plot output for UpSet plot
                     )
                   )
+                )
+              ),
+              fluidRow(
+                box(
+                  title = "Selected Genes", status = "primary", solidHeader = TRUE, width = 12,
+                  DTOutput("clicked_genes_table"),
+                  downloadButton("download_clicked_genes", "Download", class = "btn-custom")
                 )
               )
       ),
@@ -772,10 +779,10 @@ server <- function(input, output, session) {
     
     output$download_results <- downloadHandler(
       filename = function() {
-        paste("gene_search_results", Sys.Date(), ".csv", sep = "")
+        paste("gene_search_results", Sys.Date(), ".txt", sep = "")
       },
       content = function(file) {
-        write.csv(search_results, file, row.names = FALSE)
+        write.table(search_results, file, row.names = FALSE)
       }
     )
     
@@ -810,10 +817,10 @@ server <- function(input, output, session) {
       
       output$download_gene_list <- downloadHandler(
         filename = function() {
-          paste(selected_gene_list, "gene_list", Sys.Date(), ".csv", sep = "_")
+          paste(selected_gene_list, "gene_list", Sys.Date(), ".txt", sep = "_")
         },
         content = function(file) {
-          write.csv(data.frame(Genes = gene_list_contents), file, row.names = FALSE)
+          write.table(data.frame(Genes = gene_list_contents), file, row.names = FALSE, quote = F)
         }
       )
     }
@@ -990,7 +997,6 @@ server <- function(input, output, session) {
         set_name <- input$upsetjs_plot_click$name
         if (!is.null(set_name)) {
           selected_facets <- strsplit(set_name, "&")[[1]]
-          
           # Ensure all facets return gene lists
           selected_genes <- tryCatch({
             Reduce(intersect, lapply(selected_facets, function(facet) {
@@ -1204,6 +1210,7 @@ server <- function(input, output, session) {
       }
     }
   })
+  # Render the table and download button for the clicked genes
   observe({
     if (!is.null(clicked_genes())) {
       output$clicked_genes_table <- renderDT({
@@ -1212,10 +1219,10 @@ server <- function(input, output, session) {
       
       output$download_clicked_genes <- downloadHandler(
         filename = function() {
-          paste0("clicked_genes_", Sys.Date(), ".csv")
+          paste0("clicked_genes_", Sys.Date(), ".txt")
         },
         content = function(file) {
-          write.csv(data.frame(Gene = clicked_genes()), file, row.names = FALSE)
+          write.table(data.frame(Gene = clicked_genes()), file, row.names = FALSE, quote = F)
         }
       )
     }
