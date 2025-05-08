@@ -151,9 +151,12 @@ ui <- dashboardPage(
                   fileInput("gene_file", "Or upload a text file with HUGO Gene IDs"),  # File input for gene IDs
                   actionButton("use_input_gene_list", "Use Input Gene List", class = "btn-custom"),  # Button to use input gene list
                   uiOutput("input_gene_list_ui"),  # Dynamic UI for selecting gene lists
-                  actionButton("search_genes", "Search Genes", class = "btn-custom"),  # Button to search genes
+                  fluidRow(
+                    column(6, actionButton("search_genes", "Search Genes", class = "btn-custom")),  # Button to search genes
+                    column(6, actionButton("reset_search", "Reset Search", class = "btn-danger"))   # New Reset button
+                  ),
                   DTOutput("gene_results"),  # Data table output for gene search results
-                  downloadButton("download_results", "Download", class = "btn-custom")  # Button to download search results
+                  uiOutput("download_results_ui")  # Placeholder for the download button
                 )
               ),
               fluidRow(
@@ -329,28 +332,68 @@ server <- function(input, output, session) {
     return(all_genes)
   }
   
-  # Function to search for genes in the gene lists and return metadata
   search_genes <- function(gene_names) {
-    results <- data.frame(Gene = character(), Gene_list_name = character(), Facets = character(), Reference = character(), stringsAsFactors = FALSE)
-    gene_names <- tolower(gene_names)
+    results <- data.frame(
+      Gene_list_name = character(),
+      Facets = character(),
+      Number_of_Input_Genes = integer(),
+      Number_of_Genes_in_List = integer(),
+      Number_of_Overlaps = integer(),
+      Percentage_of_Overlap = numeric(),
+      Overlapping_Genes = character(),
+      Reference = character(),
+      stringsAsFactors = FALSE
+    )
+    
+    gene_names <- toupper(gene_names)  # Ensure case consistency
+    num_input_genes <- length(unique(gene_names))  # Total number of unique input genes
+    
     for (file in files) {
-      gene_list <- suppressWarnings(readLines(file))
-      gene_list <- gene_list[!grepl("GENE_SYMBOL", gene_list, ignore.case = TRUE)]
-      gene_list <- tolower(gene_list)
-      for (gene in gene_names) {
-        if (gene %in% gene_list) {
-          file_base <- sub("\\.txt$", "", basename(file))
-          metadata_row <- metadata[which(metadata$Gene_list_name == file_base), ]
-          if (nrow(metadata_row) > 0) {
-            facets <- metadata_row$Facets
-            gene_list <- metadata_row$Gene_list_name
-            author <- metadata_row$Author
-            title <- metadata_row$Title
-            results <- rbind(results, data.frame(Gene = toupper(gene),Gene_list_name=gene_list, Facets = facets, Reference = title))
-          }
+      gene_data <- read.table(file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+      
+      # Check column name consistency
+      if ("Genes" %in% colnames(gene_data)) {
+        colnames(gene_data)[which(colnames(gene_data) == "Genes")] <- "GENE_SYMBOL"
+      }
+      
+      gene_list <- toupper(gene_data$GENE_SYMBOL)
+      gene_list <- unique(gene_list) 
+      num_genes_in_list <- length(gene_list)  
+      
+      overlapping_genes <- intersect(gene_names, gene_list)
+      
+      # Include gene lists with any overlap 
+      if (length(overlapping_genes) >= 1) {
+        percentage_overlap <- (length(overlapping_genes) / num_input_genes) * 100  # Relative to input genes
+        
+        file_base <- sub("\\.txt$", "", basename(file))
+        metadata_row <- metadata[which(metadata$Gene_list_name == file_base), ]
+        if (nrow(metadata_row) > 0) {
+          facets <- metadata_row$Facets
+          gene_list_name <- metadata_row$Gene_list_name
+          author <- metadata_row$Author
+          title <- metadata_row$Title
+          results <- rbind(
+            results,
+            data.frame(
+              Gene_list_name = gene_list_name,
+              Facets = facets,
+              Number_of_Input_Genes = num_input_genes,
+              Number_of_Genes_in_List = num_genes_in_list,
+              Number_of_Overlaps = length(overlapping_genes),
+              Percentage_of_Overlap = round(percentage_overlap, 2),
+              Overlapping_Genes = paste(overlapping_genes, collapse = ", "),
+              Reference = title,
+              stringsAsFactors = FALSE
+            )
+          )
         }
       }
     }
+    
+    # Sort the results by Number_of_Overlaps in descending order
+    results <- results[order(-results$Number_of_Overlaps), ]
+    
     results <- unique(results)
     return(results)
   }
@@ -444,15 +487,16 @@ server <- function(input, output, session) {
     
     heatmaply::heatmaply(
       similarity_matrix,
-      xlab = "Gene Lists",
-      ylab = "Gene Lists",
-      main = "Similarity Matrix (Gene Lists)",
+      xlab = NA,
+      ylab = NA,
+      main = "Similarity Matrix (Facets)",
       plot_method = "plotly",
-      dendrogram = "none",  
-      hide_colorbar = TRUE, 
-      na.value = "transparent",
+      dendrogram = "none",  # Remove the dendrogram
+      hide_colorbar = F, 
+      na.value = "transparent" ,
       fontsize_row = 16,  
-      fontsize_col = 16
+      fontsize_col = 16,
+      colorRampPalette(c("blue", "red"))(256)
     )
   }
   
@@ -481,19 +525,20 @@ server <- function(input, output, session) {
     }
     
     # Show only the upper triangle of the matrix
-    similarity_matrix[upper.tri(similarity_matrix)] <- NA
+    similarity_matrix[lower.tri(similarity_matrix)] <- NA
     
     heatmaply::heatmaply(
       similarity_matrix,
-      xlab = "Facets",
-      ylab = "Facets",
+      xlab = NA,
+      ylab = NA,
       main = "Similarity Matrix (Facets)",
       plot_method = "plotly",
       dendrogram = "none",  # Remove the dendrogram
-      hide_colorbar = TRUE, 
+      hide_colorbar = F, 
       na.value = "transparent" ,
       fontsize_row = 16,  
-      fontsize_col = 16
+      fontsize_col = 16,
+      colorRampPalette(c("blue", "red"))(256)
     )
   }
   
@@ -534,7 +579,7 @@ server <- function(input, output, session) {
   # -----------------------------------------------------------
   
   #CHANGE IF YOUR FOLDER PATH IS DIFFERENT
-  #setwd("/Users/gpegoraro/Documents/Genedex/")
+  #setwd("C:/Users/gp487/OneDrive - University of Exeter/Genedex/")
   # Load metadata from the Excel file
   local_folder <- "Genes_lists"
   metadata_path <- "Gene_list_collection.xlsx"
@@ -566,6 +611,9 @@ server <- function(input, output, session) {
   # -----------------------------------------------------------
   # Reactive values
   # -----------------------------------------------------------
+  
+  # Reactive value to store search results
+  search_results_rv <- reactiveVal()
   
   # Reactive value to store facet results
   facet_results <- reactiveVal()
@@ -749,44 +797,107 @@ server <- function(input, output, session) {
   # Observe event for gene search
   observeEvent(input$search_genes, {
     gene_input <- input$genes
-    if (is.null(gene_input)) {
-      gene_input <- ""
+    if (is.null(gene_input) || gene_input == "") {
+      showNotification("Please enter at least one gene symbol.", type = "warning")
+      return()
     }
-    gene_names <- unlist(strsplit(gene_input, split = " "))
-    gene_names <- trimws(gene_names)  # Remove leading/trailing whitespace
     
+    # Split the input genes based on one or more whitespace characters
+    gene_names <- unlist(strsplit(gene_input, split = "\\s+"))
+    
+    # Remove any empty strings that may have resulted from splitting
+    gene_names <- gene_names[gene_names != ""]
+    
+    # Trim whitespace from each gene symbol
+    gene_names <- trimws(gene_names)
+    
+    # Convert gene symbols to uppercase
+    gene_names <- toupper(gene_names)
+    
+    # Remove duplicate gene symbols
+    gene_names <- unique(gene_names)
+    
+    # Include genes from uploaded file if provided
     if (!is.null(input$gene_file)) {
       file_genes <- suppressWarnings(readLines(input$gene_file$datapath))
+      file_genes <- trimws(file_genes)
+      file_genes <- toupper(file_genes)
+      file_genes <- unique(file_genes)
+      
       gene_names <- unique(c(gene_names, file_genes))
-      uploaded_genes(file_genes)  # Store uploaded genes
+      uploaded_genes(file_genes)
     }
     
+    # Include genes from selected input gene lists if any
     selected_lists <- input$select_input_gene_list_search
     if (length(selected_lists) > 0) {
       lists <- gene_lists()
-      gene_names <- unique(c(gene_names, unlist(lapply(selected_lists, function(list_name) lists[[list_name]]))))
+      selected_genes <- unlist(lists[selected_lists])
+      selected_genes <- toupper(selected_genes)
+      selected_genes <- unique(selected_genes)
+      gene_names <- unique(c(gene_names, selected_genes))
     }
     
-    input_genes(gene_names)  # Store input genes
+    # Check if there are any genes to search
+    if (length(gene_names) == 0) {
+      showNotification("No valid gene symbols entered. Please enter at least one gene symbol.", type = "warning")
+      return()
+    }
     
+    # Store input genes
+    input_genes(gene_names)
+    
+    # Proceed with the search
     search_results <- search_genes(gene_names)
     
-    search_results <- search_results[, c("Gene","Gene_list_name", "Facets", "Reference")]
+    search_results <- search_results[, c(
+      "Gene_list_name",
+      "Facets",
+      "Number_of_Input_Genes",
+      "Number_of_Genes_in_List",
+      "Number_of_Overlaps",
+      "Overlapping_Genes",
+      "Reference"
+    )]
+    
+    # Rename the columns
+    colnames(search_results) <- c(
+      "Gene List Name",
+      "Facets",
+      "Number of Input Genes",
+      "Number of Genes in List",
+      "Number of Matches",
+      "Matching Genes",
+      "Reference"
+    )
+    search_results_rv(search_results)
     
     output$gene_results <- renderDT({
-      datatable(search_results, options = list(pageLength = 25, scrollX = TRUE)) 
+      datatable(
+        search_results,
+        options = list(
+          pageLength = 25,
+          scrollX = TRUE,
+          order = list(list(4, 'desc'))  # Sort by Number_of_Overlaps
+        ),
+        rownames = FALSE
+      )
     })
-    
-    output$download_results <- downloadHandler(
-      filename = function() {
-        paste("gene_search_results", Sys.Date(), ".txt", sep = "")
-      },
-      content = function(file) {
-        write.table(search_results, file, row.names = FALSE)
-      }
-    )
-    
+    # Render the download button UI
+    output$download_results_ui <- renderUI({
+      downloadButton("download_search_results", "Download Results", class = "btn-custom")
+    })
   })
+  
+  # Download handler for the search results
+  output$download_search_results <- downloadHandler(
+    filename = function() {
+      paste0("gene_search_results_", Sys.Date(), ".csv")
+    },
+    content = function(file) {
+      write.csv(search_results_rv(), file, row.names = FALSE)
+    }
+  )
   
   # Observe event for gene search within selected facets
   observeEvent(input$search_facet, {
@@ -825,6 +936,24 @@ server <- function(input, output, session) {
       )
     }
   })
+  
+  # Observe event for resetting the gene search
+  observeEvent(input$reset_search, {
+    updateTextInput(session, "genes", value = "")
+    
+    updateSelectizeInput(session, "select_input_gene_list_search", selected = NULL)
+    
+    output$gene_results <- renderDT(NULL)
+    output$download_results_ui <- renderUI(NULL)
+    
+    input_genes(NULL)
+    uploaded_genes(NULL)
+    
+    output$input_gene_list_ui <- renderUI(NULL)
+    
+    showNotification("Gene search has been reset.", type = "message")
+  })
+  
   
   # ----------------------
   # Tab: Similarity Matrix
