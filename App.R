@@ -9,6 +9,7 @@ library(plotly)
 library(visNetwork)
 library(upsetjs)
 library(heatmaply)
+library(shinyjs)
 
 # -----------------------------------------------------------
 # UI
@@ -43,6 +44,16 @@ ui <- dashboardPage(
   
   # Define the body of the dashboard
   dashboardBody(
+    useShinyjs(),
+    
+    # ─── Initialize all Bootstrap tooltips ────────────────────────────────────────
+    tags$script(HTML("
+    $(function(){
+      $('[data-toggle=\"tooltip\"]').tooltip();
+    });
+  ")),
+    # ──────────────────────────────────────────────────────────────────────────────
+    
     tags$head(
       # Custom CSS for styling various elements
       tags$style(HTML("
@@ -146,25 +157,42 @@ ui <- dashboardPage(
       tabItem(tabName = "gene_search",
               fluidRow(
                 box(
-                  title = "Gene Search", status = "primary", solidHeader = TRUE, width = 12,
-                  textInput("genes", "Enter HUGO Gene IDs (separated by spaces)", value = ""),  # Input for gene IDs
-                  fileInput("gene_file", "Or upload a text file with HUGO Gene IDs"),  # File input for gene IDs
-                  actionButton("use_input_gene_list", "Use Input Gene List", class = "btn-custom"),  # Button to use input gene list
-                  uiOutput("input_gene_list_ui"),  # Dynamic UI for selecting gene lists
-                  fluidRow(
-                    column(6, actionButton("search_genes", "Search Genes", class = "btn-custom")),  # Button to search genes
-                    column(6, actionButton("reset_search", "Reset Search", class = "btn-danger"))   # New Reset button
+                  width = 12, status = "primary", solidHeader = TRUE,
+                  h4("Search Your Genes", style = "margin-bottom:20px;"),
+                  
+                  # Step 1 with tooltip on the info icon
+                  radioButtons(
+                    "input_mode",
+                    label = tagList(
+                      "Step 1: Choose Input Method:",
+                      tags$span(
+                        icon("info-circle"),
+                        `data-toggle` = "tooltip",
+                        `data-html`   = "true",
+                        `data-placement` = "right",
+                        title = "
+                        <ul style='margin:0; padding-left:16px;'>
+                        <li><b>Manual</b>: Type one HUGO ID per line.</li>
+                        <li><b>File</b>: Upload a .txt (one ID per line) or .csv (one column).</li>
+                        <li><b>Saved</b>: Pick one of your saved gene lists.</li>
+                        </ul>
+                        ",
+                        style = "cursor:help; color:#777; margin-left:8px;"
+                      )
+                    ),
+                    choices = c(
+                      "Type genes"    = "manual",
+                      "Upload file"   = "file",
+                      "Saved list"    = "saved"
+                    )
                   ),
-                  DTOutput("gene_results"),  # Data table output for gene search results
-                  uiOutput("download_results_ui")  # Placeholder for the download button
-                )
-              ),
-              fluidRow(
-                box(
-                  title = "Facet Search", status = "primary", solidHeader = TRUE, width = 12,
-                  selectInput("facet_select", "Select a Facet", choices = NULL),  # Dropdown to select a facet
-                  actionButton("search_facet", "Search Facet", class = "btn-custom"),  # Button to search by facet
-                  DTOutput("facet_results")  # Data table output for facet search results
+                  
+                  uiOutput("gene_input_ui"),
+                  actionButton("search_genes", "Step 2: Search", class="btn-custom", disabled=TRUE),
+                  actionButton("reset_search", "Reset", class="btn-danger", style="margin-left:10px;"),
+                  br(), br(),
+                  DTOutput("gene_results"),
+                  uiOutput("download_results_ui")
                 )
               )
       ),
@@ -256,34 +284,44 @@ ui <- dashboardPage(
       ),
       
       # Tab for Input Gene Lists functionality
-      tabItem(tabName = "input_gene_lists",
-              fluidRow(
-                box(
-                  title = "Input Gene Lists", status = "primary", solidHeader = TRUE, width = 12,
-                  actionButton("add_gene_list", "Add a Gene List", class = "btn-custom"),  # Button to add a gene list
-                  uiOutput("gene_list_ui")  # Dynamic UI for managing gene lists
-                )
-              ),
-              conditionalPanel(
-                condition = "input.add_gene_list > 0",  # Show these buttons after "Add a Gene List" is clicked
-                fluidRow(
-                  box(
-                    title = "Manage Gene Lists", status = "primary", solidHeader = TRUE, width = 12,
-                    actionButton("clear_gene_lists", "Clear All Gene Lists", class = "btn-danger"),  # Button to clear all gene lists
-                    actionButton("visualize_gene_lists", "Visualize Gene Lists", class = "btn-custom")  # Button to visualize gene lists
-                  )
-                )
-              ),
-              conditionalPanel(
-                condition = "input.visualize_gene_lists > 0",  # Show "Visualized Gene Lists" after the button is clicked
-                fluidRow(
-                  box(
-                    title = "Visualized Gene Lists", status = "primary", solidHeader = TRUE, width = 12,
-                    DTOutput("visualized_gene_lists")  # Data table output for visualized gene lists
-                  )
-                )
+      tabItem(
+        tabName = "input_gene_lists",
+        fluidRow(
+          box(
+            title = "Input Gene Lists", status = "primary", solidHeader = TRUE, width = 12,
+            radioButtons(
+              "input_list_mode", "Add Gene Lists by:",
+              choices = c("Upload Files" = "file", "Manual Entry" = "manual"),
+              inline = TRUE
+            ),
+            conditionalPanel(
+              condition = "input.input_list_mode == 'file'",
+              fileInput(
+                "gene_list_files",
+                "Upload gene list files (.txt, .csv)",
+                multiple = TRUE,
+                accept = c(".txt", ".csv")
               )
+            ),
+            conditionalPanel(
+              condition = "input.input_list_mode == 'manual'",
+              textInput("manual_list_name", "List Name", value = "My_Gene_List"),
+              textAreaInput(
+                "manual_list_genes",
+                "Enter genes (one per line)",
+                rows = 6,
+                placeholder = "e.g. TP53\nBRCA1\nEGFR"
+              ),
+              actionButton("add_manual_list", "Add List", class = "btn-custom")
+            ),
+            hr(),
+            actionButton("clear_lists", "Clear All Lists", class = "btn-danger"),
+            br(), br(),
+            DTOutput("gene_lists_preview")
+          )
+        )
       )
+      
     ),
     
     tags$div(id = "modal_placeholder")  
@@ -341,62 +379,75 @@ server <- function(input, output, session) {
       Number_of_Overlaps = integer(),
       Percentage_of_Overlap = numeric(),
       Overlapping_Genes = character(),
+      Hypergeometric_p_value = numeric(),
       Reference = character(),
+      Description = character(),
       stringsAsFactors = FALSE
     )
     
-    gene_names <- toupper(gene_names)  # Ensure case consistency
-    num_input_genes <- length(unique(gene_names))  # Total number of unique input genes
     
-    for (file in files) {
+    gene_names <- toupper(gene_names)
+    num_input_genes <- length(unique(gene_names))
+    
+    # Use union of genes across all curated lists as the universe
+    universe_genes <- unique(unlist(lapply(files, function(file) {
       gene_data <- read.table(file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
-      
-      # Check column name consistency
       if ("Genes" %in% colnames(gene_data)) {
         colnames(gene_data)[which(colnames(gene_data) == "Genes")] <- "GENE_SYMBOL"
       }
-      
-      gene_list <- toupper(gene_data$GENE_SYMBOL)
-      gene_list <- unique(gene_list) 
-      num_genes_in_list <- length(gene_list)  
+      return(toupper(gene_data$GENE_SYMBOL))
+    })))
+    N <- length(universe_genes)
+    n <- num_input_genes
+    
+    for (file in files) {
+      gene_data <- read.table(file, header = TRUE, sep = "\t", stringsAsFactors = FALSE)
+      if ("Genes" %in% colnames(gene_data)) {
+        colnames(gene_data)[which(colnames(gene_data) == "Genes")] <- "GENE_SYMBOL"
+      }
+      gene_list <- toupper(unique(gene_data$GENE_SYMBOL))
+      M <- length(gene_list)
       
       overlapping_genes <- intersect(gene_names, gene_list)
+      k <- length(overlapping_genes)
       
-      # Include gene lists with any overlap 
-      if (length(overlapping_genes) >= 1) {
-        percentage_overlap <- (length(overlapping_genes) / num_input_genes) * 100  # Relative to input genes
+      if (k >= 1) {
+        percentage_overlap <- (k / num_input_genes) * 100
+        pval <- phyper(k - 1, M, N - M, n, lower.tail = FALSE)
         
         file_base <- sub("\\.txt$", "", basename(file))
         metadata_row <- metadata[which(metadata$Gene_list_name == file_base), ]
         if (nrow(metadata_row) > 0) {
           facets <- metadata_row$Facets
           gene_list_name <- metadata_row$Gene_list_name
-          author <- metadata_row$Author
           title <- metadata_row$Title
+          
           results <- rbind(
             results,
             data.frame(
               Gene_list_name = gene_list_name,
               Facets = facets,
-              Number_of_Input_Genes = num_input_genes,
-              Number_of_Genes_in_List = num_genes_in_list,
-              Number_of_Overlaps = length(overlapping_genes),
+              Number_of_Input_Genes = n,
+              Number_of_Genes_in_List = M,
+              Number_of_Overlaps = k,
               Percentage_of_Overlap = round(percentage_overlap, 2),
               Overlapping_Genes = paste(overlapping_genes, collapse = ", "),
+              Hypergeometric_p_value = signif(pval, 4),
               Reference = title,
+              Description = metadata_row$Notes,
               stringsAsFactors = FALSE
             )
           )
+          
         }
       }
     }
     
-    # Sort the results by Number_of_Overlaps in descending order
     results <- results[order(-results$Number_of_Overlaps), ]
-    
     results <- unique(results)
     return(results)
   }
+  
   
   # Function to read and combine gene symbols from the selected gene list files
   combine_gene_symbols <- function(selected_gene_lists) {
@@ -636,6 +687,11 @@ server <- function(input, output, session) {
   # Reactive value to store multiple gene lists
   gene_lists <- reactiveVal(list())
   
+  # Reactive data.frame to store all gene lists
+  gene_lists_df <- reactiveVal(
+    data.frame(ListName = character(), Gene = character(), stringsAsFactors = FALSE)
+  )
+  
   # Reactive value to track if genes are searched
   genes_searched <- reactiveVal(FALSE)
   
@@ -652,142 +708,58 @@ server <- function(input, output, session) {
   # Tab: Input gene lists
   # -----------------------------------------------------------
   
-  # UI for dynamic gene list input
-  output$gene_list_ui <- renderUI({
-    lists <- gene_lists()
-    ui_elements <- lapply(seq_along(lists), function(i) {
-      list(
-        textInput(paste0("gene_list_name_", i), label = paste("Insert Gene List", i, "Name"), value = names(lists)[i]),
-        textAreaInput(paste0("gene_list_", i), label = paste("Gene List", i), value = paste(lists[[i]], collapse = "\n"), rows = 5),
-        actionButton(paste0("remove_gene_list_", i), label = "Remove gene list", class = "btn btn-danger"), # Button to remove all gene lists
-        actionButton("save_all_gene_lists", "Save", class = "btn-custom")  # Button to save all gene lists
-        
-      )
-    })
-    if (length(lists) > 0) {
-      ui_elements <- append(ui_elements, list(actionButton("add_more_gene_list", label = "+", class = "btn btn-primary square-button")))
-    }
-    do.call(tagList, ui_elements)
-  })
-  
-  # Observe event for adding the initial gene list
-  observeEvent(input$add_gene_list, {
-    lists <- gene_lists()
-    if (length(lists) == 0) {
-      new_list <- list("Enter genes here")
-      names(new_list) <- paste0("Gene List ", length(lists) + 1)
-      lists <- c(lists, new_list)
-      gene_lists(lists)
-    }
-  })
-  
-  # Observe event for manually entered gene list
-  observeEvent(input$add_manual_gene_list, {
-    manual_list_input <- input$manual_gene_list
-    if (is.null(manual_list_input)) {
-      manual_list_input <- ""
-    }
-    genes <- unlist(strsplit(manual_list_input, split = "\n"))
-    genes <- trimws(genes)  
-    manual_genes(genes)  
-    
-    updated_genes <- input_list_genes()
-    updated_names <- input_list_name()
-    updated_genes <- c(updated_genes, list(genes))
-    updated_names <- c(updated_names, input$manual_gene_list_name)
-    input_list_genes(updated_genes)
-    input_list_name(updated_names)
-    
-    output$manual_gene_list_contents <- renderDT({
-      datatable(data.frame(Genes = genes), options = list(pageLength = 10, scrollX = TRUE))
-    })
-  })
-  
-  
-  # Observe event for adding more gene lists
-  observeEvent(input$add_more_gene_list, {
-    lists <- gene_lists()
-    new_list <- list("Enter genes here")
-    names(new_list) <- paste0("Gene List ", length(lists) + 1)
-    lists <- c(lists, new_list)
-    gene_lists(lists)
-  })
-  
-  # Observe event for removing gene lists
-  observe({
-    lapply(seq_along(gene_lists()), function(i) {
-      observeEvent(input[[paste0("remove_gene_list_", i)]], {
-        lists <- gene_lists()
-        lists <- lists[-i]
-        gene_lists(lists)
-      })
-    })
-  })
-  
-  # Observe event for clearing all gene lists
-  observeEvent(input$clear_gene_lists, {
-    gene_lists(list())
-  })
-  
-  # Observe event for saving all gene lists
-  observeEvent(input$save_all_gene_lists, {
-    lists <- gene_lists()
-    updated_lists <- list()
-    
-    for (i in seq_along(lists)) {
-      list_name <- input[[paste0("gene_list_name_", i)]]
-      genes <- unlist(strsplit(input[[paste0("gene_list_", i)]], split = "\n"))
-      genes <- trimws(genes)  
-      
-      # Standardize the column name to "GENE_SYMBOL"
-      if (length(genes) > 0) {
-        gene_data <- data.frame(GENE_SYMBOL = genes, stringsAsFactors = FALSE)
-        updated_lists[[list_name]] <- gene_data$GENE_SYMBOL
+  # Handle file uploads
+  observeEvent(input$gene_list_files, {
+    req(input$gene_list_files)
+    df_list <- lapply(seq_len(nrow(input$gene_list_files)), function(i) {
+      path <- input$gene_list_files$datapath[i]
+      ext  <- tools::file_ext(input$gene_list_files$name[i])
+      genes <- if (tolower(ext) == "txt") {
+        readLines(path)
       } else {
-        print(paste("Warning: Gene list", list_name, "is empty."))
+        read.csv(path, header=TRUE, stringsAsFactors=FALSE)[[1]]
       }
-      
-    }
-    
-    gene_lists(updated_lists)
-    
-    output$manual_gene_list_contents <- renderDT({
-      datatable(
-        data.frame(GeneList = rep(names(updated_lists), sapply(updated_lists, length)), Genes = unlist(updated_lists)), 
-        options = list(
-          pageLength = 10, 
-          scrollX = TRUE,
-          columnDefs = list(list(visible = FALSE, targets = 0))  # Hide the first column
-        )
+      data.frame(
+        ListName = tools::file_path_sans_ext(input$gene_list_files$name[i]),
+        Gene     = toupper(trimws(genes)),
+        stringsAsFactors = FALSE
       )
     })
+    all_lists <- do.call(rbind, df_list)
+    gene_lists_df(rbind(gene_lists_df(), all_lists))
   })
   
-  # Observe event for visualizing gene lists
-  observeEvent(input$visualize_gene_lists, {
-    lists <- gene_lists()
-    output$visualized_gene_lists <- renderDT({
-      datatable(
-        data.frame(GeneList = rep(names(lists), sapply(lists, length)), Genes = unlist(lists)), 
-        options = list(pageLength = 10, scrollX = TRUE)
-      )
-    })
-  })
-  
-  # Observe event for use input gene list button
-  observeEvent(input$use_input_gene_list, {
-    output$input_gene_list_ui <- renderUI({
-      selectizeInput("select_input_gene_list_search", "Select Input Gene List", choices = names(gene_lists()), multiple = TRUE)
-    })
+  # Handle manual entry
+  observeEvent(input$add_manual_list, {
+    req(input$manual_list_name)
+    genes <- strsplit(input$manual_list_genes, "[\r\n]+")[[1]]
+    genes <- toupper(trimws(genes))
+    new_df <- data.frame(
+      ListName = input$manual_list_name,
+      Gene     = genes,
+      stringsAsFactors = FALSE
+    )
+    gene_lists_df(rbind(gene_lists_df(), new_df))
     
-    observe({
-      selected_list <- input$select_input_gene_list_search
-      if (!is.null(selected_list) && length(selected_list) > 0) {
-        gene_list <- gene_lists()[[selected_list]]
-        gene_list <- clean_gene_list(gene_list)
-        cat("Cleaned Input Gene List:", gene_list, "\n")
-      }
-    })
+    # Clear manual entry fields
+    updateTextInput(session, "manual_list_name", value = "")
+    updateTextAreaInput(session, "manual_list_genes", value = "")
+  })
+  
+  # Clear all lists
+  observeEvent(input$clear_lists, {
+    gene_lists_df(
+      data.frame(ListName = character(), Gene = character(), stringsAsFactors = FALSE)
+    )
+  })
+  
+  # Preview gene lists
+  output$gene_lists_preview <- renderDT({
+    datatable(
+      gene_lists_df(),
+      options = list(pageLength = 10, scrollX = TRUE),
+      rownames = FALSE
+    )
   })
   
   # -----------------------------------------------------------
@@ -795,94 +767,103 @@ server <- function(input, output, session) {
   # -----------------------------------------------------------
   
   # Observe event for gene search
+  # Step 2: render the appropriate input control
+  
+  disable("search_genes")  # start with the Search button disabled!
+  
+  output$gene_input_ui <- renderUI({
+    # don’t even attempt switch() until the user has picked exactly one mode
+    if (is.null(input$input_mode) || length(input$input_mode) != 1) {
+      return(NULL)
+    }
+    
+    switch(input$input_mode,
+           manual = tagList(
+             textAreaInput("manual_genes",
+                           "Enter HUGO IDs (one per line)",
+                           placeholder = "e.g. TP53\nBRCA1\nEGFR", rows = 5
+             ),
+             helpText("Blank lines are ignored.")
+           ),
+           
+           file = fileInput("gene_file",
+                            "Upload .txt (one per line) or .csv (one column of IDs)",
+                            accept = c(".txt", ".csv")
+           ),
+           
+           saved = selectizeInput(
+             "select_saved",
+             "Choose from saved lists",
+             choices = unique(gene_lists_df()$ListName),
+             multiple = TRUE,
+             options = list(placeholder = "start typing…")
+           )
+    )
+  })
+  
+  observe({
+    valid <- FALSE
+    if (input$input_mode == "manual" && nzchar(input$manual_genes  %||% "")) valid <- TRUE
+    if (input$input_mode == "file"   && !is.null(input$gene_file))            valid <- TRUE
+    if (input$input_mode == "saved"  && length(input$select_saved)  > 0)      valid <- TRUE
+    toggleState("search_genes", valid)
+  })
+  
+  # Step 3: consolidate & search when they click “Search”
   observeEvent(input$search_genes, {
-    gene_input <- input$genes
-    if (is.null(gene_input) || gene_input == "") {
-      showNotification("Please enter at least one gene symbol.", type = "warning")
-      return()
-    }
+    # build a unified vector of gene names
+    gene_names <- switch(input$input_mode,
+                         manual = {
+                           lines <- strsplit(input$manual_genes %||% "", "[\r\n]+")[[1]]
+                           toupper(trimws(lines))
+                         },
+                         file = {
+                           req(input$gene_file)
+                           ext <- tools::file_ext(input$gene_file$name)
+                           if (ext == "txt") {
+                             toupper(trimws(readLines(input$gene_file$datapath)))
+                           } else {
+                             df <- read.csv(input$gene_file$datapath, stringsAsFactors = FALSE, header = TRUE)
+                             toupper(trimws(df[[1]]))
+                           }
+                         },
+                         saved = {
+                           req(input$select_saved)
+                           df <- gene_lists_df()
+                           # filter rows where ListName matches any selected
+                           genes <- df$Gene[df$ListName %in% input$select_saved]
+                           unique(genes)
+                         }
+    )
     
-    # Split the input genes based on one or more whitespace characters
-    gene_names <- unlist(strsplit(gene_input, split = "\\s+"))
-    
-    # Remove any empty strings that may have resulted from splitting
-    gene_names <- gene_names[gene_names != ""]
-    
-    # Trim whitespace from each gene symbol
-    gene_names <- trimws(gene_names)
-    
-    # Convert gene symbols to uppercase
-    gene_names <- toupper(gene_names)
-    
-    # Remove duplicate gene symbols
-    gene_names <- unique(gene_names)
-    
-    # Include genes from uploaded file if provided
-    if (!is.null(input$gene_file)) {
-      file_genes <- suppressWarnings(readLines(input$gene_file$datapath))
-      file_genes <- trimws(file_genes)
-      file_genes <- toupper(file_genes)
-      file_genes <- unique(file_genes)
-      
-      gene_names <- unique(c(gene_names, file_genes))
-      uploaded_genes(file_genes)
-    }
-    
-    # Include genes from selected input gene lists if any
-    selected_lists <- input$select_input_gene_list_search
-    if (length(selected_lists) > 0) {
-      lists <- gene_lists()
-      selected_genes <- unlist(lists[selected_lists])
-      selected_genes <- toupper(selected_genes)
-      selected_genes <- unique(selected_genes)
-      gene_names <- unique(c(gene_names, selected_genes))
-    }
-    
-    # Check if there are any genes to search
+    # clean up, validate
+    gene_names <- unique(Filter(nzchar, gene_names))
     if (length(gene_names) == 0) {
-      showNotification("No valid gene symbols entered. Please enter at least one gene symbol.", type = "warning")
+      showNotification("Please provide at least one gene symbol.", type = "error")
       return()
     }
-    
-    # Store input genes
     input_genes(gene_names)
     
-    # Proceed with the search
-    search_results <- search_genes(gene_names)
+    # your existing search function
+    results <- search_genes(gene_names)
     
-    search_results <- search_results[, c(
-      "Gene_list_name",
-      "Facets",
-      "Number_of_Input_Genes",
-      "Number_of_Genes_in_List",
-      "Number_of_Overlaps",
-      "Overlapping_Genes",
-      "Reference"
-    )]
+    # render table
+   output$gene_results <- renderDT({
+  datatable(
+    results[, c(
+      "Gene_list_name","Facets","Number_of_Overlaps",
+      "Overlapping_Genes","Hypergeometric_p_value","Reference","Description"
+    )],
+    colnames = c(
+      "Gene List","Facets","Matches",
+      "Matching Genes","p-value","Reference","Description"
+    ),
+    options = list(pageLength = 10, scrollX = TRUE),
+    rownames = FALSE
+  )
+})
+
     
-    # Rename the columns
-    colnames(search_results) <- c(
-      "Gene List Name",
-      "Facets",
-      "Number of Input Genes",
-      "Number of Genes in List",
-      "Number of Matches",
-      "Matching Genes",
-      "Reference"
-    )
-    search_results_rv(search_results)
-    
-    output$gene_results <- renderDT({
-      datatable(
-        search_results,
-        options = list(
-          pageLength = 25,
-          scrollX = TRUE,
-          order = list(list(4, 'desc'))  # Sort by Number_of_Overlaps
-        ),
-        rownames = FALSE
-      )
-    })
     # Render the download button UI
     output$download_results_ui <- renderUI({
       downloadButton("download_search_results", "Download Results", class = "btn-custom")
@@ -898,6 +879,26 @@ server <- function(input, output, session) {
       write.csv(search_results_rv(), file, row.names = FALSE)
     }
   )
+  
+  # Reset handler
+  observeEvent(input$reset_search, {
+    # 1) Clear the mode selection
+    updateRadioButtons(session, "input_mode", selected = character(0))
+    
+    # 2) Clear each of the three input widgets
+    updateTextAreaInput(session, "manual_genes", value = "")
+    reset("gene_file")           # from shinyjs: clears the fileInput
+    updateSelectizeInput(session, "select_saved", selected = NULL)
+    
+    # 3) Hide any existing results
+    output$gene_results       <- renderDT(NULL)
+    output$download_results_ui <- renderUI(NULL)
+    
+    # 4) Disable the Search button again
+    disable("search_genes")
+  })
+  
+  
   
   # Observe event for gene search within selected facets
   observeEvent(input$search_facet, {
