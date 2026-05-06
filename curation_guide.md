@@ -239,7 +239,7 @@ Update this cell before saving and committing. Do not leave it stale.
 |---|---|
 | Adding one or more new gene list rows | PATCH +1 |
 | Editing any cell in an existing row (correcting a facet, fixing a DOI, etc.) | PATCH +1 |
-| Adding, renaming, or removing a column | MAJOR +1, PATCH resets to 0 |
+| Adding, renaming, or removing a column or a facet | MAJOR +1, PATCH resets to 0 |
 
 ### CHANGELOG_data.md
 
