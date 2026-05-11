@@ -93,10 +93,10 @@ GL{7-digit-zero-padded-number}_{short_descriptor}.txt
 **Rules:**
 - `GL` prefix, always uppercase
 - Seven-digit number, zero-padded (e.g. `GL0000320`, not `GL320`)
-- Number must be consecutive to the last entry in `Gene_list_collection.xlsx` — check before assigning
+- Number must be consecutive to the last entry in `Gene_list_collection.xlsx` , check before assigning
 - Descriptor: lowercase, words separated by underscores, no spaces, no special characters
 - Directional lists (up/downregulated) end with `_up` or `_down`
-- Keep descriptors concise but informative — aim for 3–6 words
+- Keep descriptors concise but informative , aim for 3–6 words
 
 **Examples:**
 
@@ -107,9 +107,9 @@ GL{7-digit-zero-padded-number}_{short_descriptor}.txt
 | `GL0000296_tau_load_astrocytes_up.txt` | Tau load correlation, astrocytes, upregulated |
 
 **What not to do:**
-- `GL320_microglia.txt` — number not zero-padded
-- `GL0000320_Tau Load Astrocytes UP.txt` — spaces and mixed case
-- `GL0000320.txt` — no descriptor
+- `GL320_microglia.txt` , number not zero-padded
+- `GL0000320_Tau Load Astrocytes UP.txt` , spaces and mixed case
+- `GL0000320.txt` , no descriptor
 
 ---
 
@@ -121,15 +121,15 @@ Add one row per gene list. All columns are required unless marked optional.
 |---|---|---|
 | `Gene_list_name` | File name without `.txt` | `GL0000320_tau_load_astrocytes_up` |
 | `Author` | First author of the source paper | `J Smith` (FirstInitial LastName) |
-| `Contributor` | Your name — who added this list | `G Pegoraro` |
+| `Contributor` | Your name , who added this list | `G Pegoraro` |
 | `Title` | Full title of the source paper | As published |
 | `Link` | Filename of the `.txt` file | `GL0000320_tau_load_astrocytes_up.txt` |
 | `DOI` | DOI of the paper | `DOI:10.1016/j.cell.2023.08.039` |
 | `PMID` | PubMed ID of the paper | `37652020` |
-| `Functional facet` | Biological process or condition | `AD, Cognitive resilience` — see Section 7 |
-| `Cellular facet` | Brain cell type or state (optional) | `Astrocytes` — see Section 7; leave blank for bulk tissue |
-| `Tissue_type` | Brain region the samples came from (optional) | `Prefrontal Cortex`, `Hippocampus` — see Section 7 |
-| `Genetic facet` | Genetic context if applicable (optional) | `APOE4`, `TREM2 variant` — leave blank if not applicable |
+| `Functional facet` | Biological process or condition | `AD, Cognitive resilience` , see Section 7 |
+| `Cellular facet` | Brain cell type or state (optional) | `Astrocytes` , see Section 7; leave blank for bulk tissue |
+| `Tissue_type` | Brain region the samples came from (optional) | `Prefrontal Cortex`, `Hippocampus` , see Section 7 |
+| `Genetic facet` | Genetic context if applicable (optional) | `APOE4`, `TREM2 variant` , leave blank if not applicable |
 | `Directionality` | Direction of expression change | `up`, `down`, or blank if not directional |
 | `Study type` | Sequencing approach | `bulk RNA-seq`, `single-cell RNA-seq`, `WGCNA`, `Microarray` |
 | `Location in the paper` | Where the list appears in the paper | `Supplementary Table 3`, `Table 2`, `Figure 4B` |
@@ -140,29 +140,29 @@ Add one row per gene list. All columns are required unless marked optional.
 
 **On `Link`:** Enter just the filename (e.g. `GL0000320_tau_load_astrocytes_up.txt`), not a full path. The app resolves paths relative to `data/gene_lists/`.
 
-**On optional columns:** `Cellular facet`, `Tissue_type`, and `Genetic facet` may be left blank when genuinely not applicable — for example, a bulk tissue study with no regional specification has no `Tissue_type`, and most lists will have no `Genetic facet`. Do not fill these with guesses.
+**On optional columns:** `Cellular facet`, `Tissue_type`, and `Genetic facet` may be left blank when genuinely not applicable , for example, a bulk tissue study with no regional specification has no `Tissue_type`, and most lists will have no `Genetic facet`. Do not fill these with guesses.
 
 ---
 
 ## 7. Assigning facets
 
-Facets are the controlled vocabulary that allows Genedex to group and compare lists across studies. There are four facet columns, each drawing from its own sheet in `data/Facets_definition.xlsx`. Do not invent new facet names — if you believe a new facet is needed, open a GitHub issue for discussion before adding it.
+Facets are the controlled vocabulary that allows Genedex to group and compare lists across studies. There are four facet columns, each drawing from its own sheet in `data/Facets_definition.xlsx`. Do not invent new facet names , if you believe a new facet is needed, open a GitHub issue for discussion before adding it.
 
 ### The four facet columns
 
-**`Functional facet`** — the biological process or pathological condition that defines the list. This column is always required.  
+**`Functional facet`** , the biological process or pathological condition that defines the list. This column is always required.  
 Reference: `Functional_facets` sheet in `Facets_definition.xlsx`.  
 Examples: `AD`, `Cognitive resilience`, `Neuroinflammation`, `Tau`, `Aβ`, `Synaptic loss`
 
-**`Cellular facet`** — the brain cell type or state the list was derived from. Leave blank for bulk tissue unless a specific cell type was isolated or explicitly deconvolved by the authors.  
+**`Cellular facet`** , the brain cell type or state the list was derived from. Leave blank for bulk tissue unless a specific cell type was isolated or explicitly deconvolved by the authors.  
 Reference: `Cellular_facets` sheet in `Facets_definition.xlsx`.  
 Examples: `Astrocytes`, `Microglia`, `Excitatory neurons`, `Interneurons`, `Oligodendrocytes`, `OPCs`
 
-**`Tissue_type`** — the brain region the samples came from.  
+**`Tissue_type`** , the brain region the samples came from.  
 Reference: `Tissue_type` sheet in `Facets_definition.xlsx`.  
 Examples: `Prefrontal Cortex`, `Hippocampus`, `Entorhinal Cortex`
 
-**`Genetic facet`** — the genetic context, if the list is specific to a genotype or variant. Leave blank for the majority of lists.  
+**`Genetic facet`** , the genetic context, if the list is specific to a genotype or variant. Leave blank for the majority of lists.  
 Reference: `Genetic_facets` sheet in `Facets_definition.xlsx`.  
 Examples: `APOE4`, `TREM2 variant`
 
@@ -177,14 +177,14 @@ Tissue_type:       Prefrontal Cortex
 Genetic facet:     (blank)
 ```
 
-The app tokenises on commas and matches against the facet vocabulary exactly — any typo or variation will cause the list to be excluded from that facet's results.
+The app tokenises on commas and matches against the facet vocabulary exactly , any typo or variation will cause the list to be excluded from that facet's results.
 
 ### Worked examples
 
 **Example 1**  
 Paper: Differential expression in AD vs control, bulk cortical tissue, PFC.  
 Functional facet: `AD` | Cellular facet: *(blank)* | Tissue_type: `Prefrontal Cortex` | Genetic facet: *(blank)*  
-Reason: Bulk tissue — no cell type can be assigned without explicit deconvolution.
+Reason: Bulk tissue , no cell type can be assigned.
 
 **Example 2**  
 Paper: scRNA-seq comparing AD vs control, astrocyte cluster, upregulated genes, PFC.  
@@ -261,7 +261,7 @@ Every commit that modifies `Gene_list_collection.xlsx` must include a correspond
 - Added GL0000320 through GL0000326 (tau load series, six cell types)
 ```
 
-Each entry needs: the version, date (YYYY-MM-DD), your name, and a one-line description per changed list. It does not need to be exhaustive prose — brief is better.
+Each entry needs: the version, date (YYYY-MM-DD), your name, and a one-line description per changed list. It does not need to be exhaustive prose, brief is better.
 
 ### Commit message format for metadata changes
 
@@ -283,7 +283,7 @@ Always commit `Gene_list_collection.xlsx` and `CHANGELOG_data.md` together in th
 
 All additions of new gene lists (Status = 1) must go through a branch and pull request. Direct pushes to `main` are only acceptable for minor corrections such as fixing a DOI or a typo in a metadata cell.
 
-### Step 1 — Create a branch
+### Step 1 : Create a branch
 
 Create a branch from an up-to-date `main`:
 
@@ -302,9 +302,9 @@ git checkout -b curation/GL0000329_tau-load-vascular
 
 One branch per curation session. If you are adding several lists from the same paper, they belong in the same branch.
 
-### Step 2 — Do the curation
+### Step 2 : Do the curation
 
-Follow Sections 4–8 as normal. Commit as you go — you do not need to wait until the end of the session to commit.
+Follow Sections 4–8 as normal. Commit as you go : you do not need to wait until the end of the session to commit.
 
 ```bash
 git add data/gene_lists/GL0000327_synaptic_loss_excitatory_neurons_down.txt
@@ -313,7 +313,7 @@ git add data/Gene_list_collection.xlsx data/CHANGELOG_data.md
 git commit -m "data: add GL0000327-328 synaptic loss [v1.13]"
 ```
 
-### Step 3 — Open a pull request
+### Step 3 : Open a pull request
 
 Push the branch and open a pull request against `main` on GitHub:
 
@@ -326,7 +326,7 @@ In the PR description, include:
 - The source paper (author, title, or DOI)
 - Any non-obvious facet assignment decisions
 
-### Step 4 — Review and merge
+### Step 4 : Review and merge
 
 A senior lab member reviews the PR before it is merged. The review checks:
 
@@ -350,10 +350,10 @@ Run through this before every `git push`.
 - [ ] File saved in `data/gene_lists/`
 - [ ] File name matches `Gene_list_name` in the metadata exactly (without `.txt`)
 - [ ] `Link` column contains just the filename, not a full path
-- [ ] GL number is consecutive — no gaps, no duplicates
+- [ ] GL number is consecutive : no gaps, no duplicates
 - [ ] All 16 metadata columns filled (optional columns intentionally blank where appropriate)
-- [ ] Facet values checked against `Facets_definition.xlsx` — exact match, no typos
-- [ ] `Directionality` is `up`, `down`, or blank — nothing else
+- [ ] Facet values checked against `Facets_definition.xlsx` : exact match, no typos
+- [ ] `Directionality` is `up`, `down`, or blank , nothing else
 - [ ] `Status` is set to `1`
 - [ ] Version number in `Key` sheet cell `A1` has been bumped
 - [ ] Entry added to `CHANGELOG_data.md` with version, date, name, and description
