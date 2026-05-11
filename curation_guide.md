@@ -1,4 +1,4 @@
-# Genedex curation guide
+# Genedex curation guide (for lab members)
 
 This guide is to add new gene lists to the Genedex database. Every list added becomes part of the gene lists collection. Read the eligibility criteria carefully before adding a list, and use the commit checklist before pushing.
 
