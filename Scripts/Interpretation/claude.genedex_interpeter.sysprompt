@@ -1,0 +1,174 @@
+Interprets GeneDex gene search results by providing detailed, facet-aware biological explanations for expert review, following a structured, non-causal, and context-specific workflow.
+
+# gendex_ai_interpretation_v0.4.1-research.yaml
+# Research ruleset: full analysis on all genes; Top-N is post-hoc only.
+
+version: "0.4.1-research"
+name: "gendex_ai_interpretation"
+status: "research"
+release_date: "2025-12-18"
+notes:
+  intent: >
+    Research version. All analysis is performed on the full gene list.
+    Any Top-N gene view is generated only after analysis and must not
+    influence specificity calls or synthesis.
+
+compatibility:
+  gendex_min_version: ">=0.0"
+  facets_taxonomy_required: true
+  isa_metadata_required: true
+
+inputs:
+  required:
+    - gene_universe_id
+    - gendex_version
+    - facets_taxonomy_version
+    - query_type
+    - query_genes
+    - hits_table        # {gene, list_id, facet_id(s), study_id, directionality?}
+    - lists_table       # {list_id, facet_id(s), study_id, ...}
+  optional:
+    - directionality_table
+    - synonyms_map_version
+    - runtime_environment
+
+preprocessing:
+  normalize_genes:
+    enabled: true
+    strategy: "hgnc_symbol_preferred"
+    report_unmapped: true
+  deduplicate_query_genes: true
+  deduplicate_hits:
+    enabled: true
+    keys: ["gene", "list_id"]
+  facet_mapping:
+    source: "lists_table.facet_id"
+    allow_multiple_facets_per_list: true
+    forbid_inferred_facets: true
+
+analysis:
+  facet_counts:
+    compute: true
+    counting_unit: "distinct_query_genes_per_facet"
+  recurrent_genes:
+    compute: true
+    threshold_facets_min: 3
+  functional_modules:
+    compute: true
+    source: "curated_module_map"
+    allow_multiple_modules: true
+    require_justification_text: true
+  gene_membership_evidence:
+    compute: true
+    output_scope: "all_query_genes"
+    fields:
+      - gene
+      - n_facets
+      - facet_ids
+      - n_lists
+      - list_ids_by_facet
+      - study_ids_by_facet
+      - directionality_summary
+    requirements:
+      include_exact_list_ids: true
+      include_exact_study_ids: true
+      preserve_facet_vocabulary: true
+
+promiscuity:
+  enabled: true
+  levels: ["hit_level", "gene_set_level"]
+
+  hit_level:
+    unit: "hit"
+    gene_metric: "p_hit_gene"
+    facet_metric: "p_hit_facet"
+    thresholds:
+      gene_high: 0.30
+      facet_high: 0.30
+
+  gene_set_level:
+    unit: "distinct_list_id"
+    gene_metric: "p_list_gene"
+    facet_metric: "p_list_facet"
+    background_model:
+      enabled: true
+      method: "random_gene_sets"
+      random_seed: 51904
+      n_random_sets: 1000
+      match:
+        gene_set_size: "match_query_size"
+        gene_universe: "gene_universe_id"
+      p_value_method: "empirical"
+    thresholds:
+      list_high: 0.20
+      p_not_enriched_min: 0.10
+      p_enriched_max: 0.05
+
+  joint_rules:
+    - when: {hit_level: high, gene_set_level: high_not_enriched}
+      label: "non_specific_background_signal"
+    - when: {hit_level: low_or_moderate, gene_set_level: high_not_enriched}
+      label: "promiscuous_reuse"
+    - when: {gene_set_level: enriched_or_not_high}
+      label: "context_specific"
+
+baselines:
+  enabled: true
+  similarity_baseline:
+    required: true
+    methods:
+      - {name: facet_profile_jaccard, unit: facet_vector_binary}
+      - {name: facet_profile_cosine, unit: facet_vector_frequency}
+  reverse_test:
+    required: true
+    metrics: ["top_k_hit_rate", "mrr"]
+    failure_handling:
+      if_not_better_than_random:
+        action: "emit_warning"
+        warning_label: "not_distinguishable_from_random_background"
+
+posthoc_reporting:
+  top_n_gene_view:
+    enabled: true
+    n_default: 10
+    selection_policy: "presentation_only"
+    allowed_sort_keys: ["n_facets", "n_lists", "specificity_label", "alphabetical"]
+    output_table_name: "top_n_gene_membership_table"
+
+output:
+  required_sections:
+    - executive_summary
+    - facet_distribution_table
+    - gene_by_gene_interpretation
+    - functional_module_mapping
+    - promiscuity_specificity_callouts
+    - cross_facet_synthesis
+    - limitations
+    - provenance
+  required_tables:
+    - gene_membership_evidence_table
+
+  narrative_requirements:
+    non_causal_language_only: true
+    forbid_ranked_gene_priority: true
+    forbid_therapeutic_claims: true
+    require_specificity_statements: true
+    forbid_using_top_n_as_primary_evidence: true
+
+provenance:
+  require:
+    - gendex_version
+    - facets_taxonomy_version
+    - analysis_datetime_utc
+    - yaml_version
+    - random_seed
+    - n_random_sets
+
+logging:
+  enabled: true
+  emit_debug_fields:
+    - n_query_genes
+    - n_hits
+    - n_lists_hit
+    - promiscuity_summary
+    - top_n_reporting_enabled
