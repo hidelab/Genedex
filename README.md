@@ -1,4 +1,22 @@
-# Genedex 
+# Genedex
 ## Overview
 
-Genedex is a curated bioinformatics project and interactive framework designed to systematically capture, organize, and analyze gene signatures associated with Alzheimer's Disease. Unlike generic gene list management tools, Genedex is a curated representation of the AD continuum of molecular and phenotypic events. These events, called facets, are placed into a unified framework that allows them to be compared with each other and with genes or lists submitted for query. The platform integrates genetic, genomic, and transcriptomic data from bulk RNA-seq, single-nucleus RNA-seq, and genetic association studies to map the molecular underpinnings of AD and its resilience mechanisms
+Genedex is a curated collection gene signatures from published studies of Alzheimer's disease (AD). A signature is the list of genes that studies report, for example, genes up-regulated in AD microglia compared with controls.
+
+Each signature is annotated with **facets** that give its biological context:
+
+* the disease process or pathology it reports (functional facet)
+* the cell type (cellular facet)
+* the brain region or tissue (tissue facet)
+* genetic association (genetic facet)
+
+It also records the **direction of change** where the study reported one.
+
+Test Genedex online using the Genedex web app: https://hidelab.github.io/genedex-app/
+
+### Release notes
+
+| Release | Description | Date |
+| --- | --- | --- |
+| Genedex v1.0 | Genedex contains 1,562 gene lists from 34 studies | 09/11/2026 |
+| Genedex v1.1 | 12 new gene lists have been added to Genedex | 10/15/2026 |
